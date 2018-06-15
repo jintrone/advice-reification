@@ -62,6 +62,11 @@ loadInterpostData<-function() {
 #  end - the desired end date to be read in
 #  topic - the topic method (part of the filename to be read in)
 #  gap - the cutoff (k) that was used to generate the file (part of the filename)
+
+## Tracing back to groovy and the cutoff k I find files with gaps that are 
+## inconsistently named, which is consistent with the cutoffs.csv file
+## Not finding anything with the gap = 28, actually 
+
 loadData<- function(corpus,start="2009-01-01",end="2014-01-01",topic="NMF",gap=28) {
   file = str_c(data_dir,corpus,"_dag.",gap,".",topic,".csv",sep="")
   print(file)
