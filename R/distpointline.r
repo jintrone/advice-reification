@@ -79,3 +79,4 @@ distancePointLineTest <- function() {
     stop("error 9")
   return(TRUE)
 }
+

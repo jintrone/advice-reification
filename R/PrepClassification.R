@@ -70,7 +70,7 @@ generatePredictionFrame<-function(corpus) {
   
   tmp<-data.frame(d[,-which(colnames(d)=="guid")])
   colnames(tmp)=c(1:ncol(tmp))
-  write.csv(tmp,file=paste("../data/classification/",corpus,".topredict.csv",sep=""))
+  write.csv(tmp,file=paste("../data/classification/",corpus-spg,".topredict.csv",sep=""))
 }
 
 replaceNA<-function(dt) {

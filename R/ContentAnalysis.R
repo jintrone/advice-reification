@@ -45,3 +45,4 @@ genStatisticalSample<-function() {
   
   
 }
+
