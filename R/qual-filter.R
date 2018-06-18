@@ -9,6 +9,7 @@ library(dplyr)
 library(stringr)
 require(igraph)
 require(viridis)
+require(ggpubr)
 
 source("distpointline.r")
 
@@ -56,7 +57,7 @@ qualPlotPathDescription<-function(CTCNow) {
 
 CTCIndex <- loadSummaryData()
 
-class(CTCIndex$time) = c('POSIXt','POSIXct')CT
+class(CTCIndex$time) = c('POSIXt','POSIXct')
 
 # hist(CTCIndex$maxpth)
 
@@ -99,12 +100,44 @@ CTCIADHDSorted <-CTCIndexADHD[order(CTCIndexADHD$post_timestamp, CTCIndexADHD$po
 
 ###
 
-CTCIndex_Ordered <- CTCIndex.filtered[order(CTCIndex.filtered$comp, CTCIndex.filtered$corpus, 
-                                            CTCIndex.filtered$maxpth, CTCIndex.filtered$csize, decreasing=TRUE),]
+# CTCIndex_Ordered <- CTCIndex.filtered[order(CTCIndex.filtered$comp, CTCIndex.filtered$corpus, 
+#                                             CTCIndex.filtered$maxpth, CTCIndex.filtered$csize, decreasing=TRUE),]
 
 CTCIndex_Ordered <- CTCIndex.filtered[order(CTCIndex.filtered$csize, CTCIndex.filtered$comp, CTCIndex.filtered$corpus, 
-                                            CTCIndex.filtered$maxpth, CTCIndex.filtered$csize, decreasing=TRUE),]
+                                            CTCIndex.filtered$maxpth, decreasing=TRUE),]
 
-nrow(CTCIndex_Ordered[(CTCIndex_Ordered$comp==13),])
+# Checking out the dataset distribution: 
+min(CTCIndex_Ordered$csize)
+max(CTCIndex_Ordered$csize)
+median(CTCIndex_Ordered$csize)
+mean(CTCIndex_Ordered$csize)
+sd(CTCIndex_Ordered$csize)
+
+# > min(CTCIndex_Ordered$csize)
+# [1] 2
+# > max(CTCIndex_Ordered$csize)
+# [1] 862
+# > median(CTCIndex_Ordered$csize)
+# [1] 4
+# > mean(CTCIndex_Ordered$csize)
+# [1] 57.1414
+# > sd(CTCIndex_Ordered$csize)
+# [1] 170.2297
+# > 
+
+nrow(CTCIndex_Ordered[(CTCIndex_Ordered$csize > 8),])
+nrow(CTCIndex_Ordered[(CTCIndex_Ordered$csize > 8) && (CTCIndex_Ordered$csize < 900),])
+
+plot(CTCIndex_Ordered$comp, log(CTCIndex_Ordered$csize))
+
+csizedist <- CTCIndex_Ordered %>%
+              group_by(csize) %>%
+              summarise(counts=n())
+
+ggplot(csizedist, aes(x = csize, y = counts)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  geom_text(aes(label = counts), vjust = -0.3) + 
+  geom_label_repel(aes(label=csize), color='black', size=3.5)+
+  theme_pubclean()
 
 component13 <- CTCIndex_Ordered[(CTCIndex_Ordered$comp==13),]
