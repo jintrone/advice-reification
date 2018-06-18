@@ -1,3 +1,6 @@
+# Data Directory for now
+data/*
+
 # Dropbox files
 .DS_Store
 
