@@ -31,7 +31,7 @@ CTCIndex$comp <- as.factor(CTCIndex$comp)
 CTCIndex$topic <- as.factor(CTCIndex$topic)
 
 colnames(CTCIndex)[2] <- "post_id_native"
-colnames(CTCIndex)[3] <- "post-timestamp"
+colnames(CTCIndex)[3] <- "post_timestamp"
 
 
 # qualPlotPathDescription<-function() {
@@ -67,7 +67,8 @@ qualPlotPathDescription<-function(CTCNow) {
 
 CTCIndexADHD <- CTCIndex[(CTCIndex$comp==608) & CTCIndex$corpus=="anxiety_and_panic_disorders_exchange",]
 
-CTCIADHDSorted <-CTCIndexADHD[order(time, 'name'),]
+CTCIADHDSorted <-CTCIndexADHD[order(CTCIndexADHD$post_timestamp, CTCIndexADHD$post_id_native),]
 
 
 newdata <- mtcars[order(mpg, cyl),]
+
