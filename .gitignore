@@ -39,3 +39,4 @@ vignettes/*.pdf
 # Ignore data directory
 data/
 /data/
+data
