@@ -70,5 +70,4 @@ CTCIndexADHD <- CTCIndex[(CTCIndex$comp==608) & CTCIndex$corpus=="anxiety_and_pa
 CTCIADHDSorted <-CTCIndexADHD[order(CTCIndexADHD$post_timestamp, CTCIndexADHD$post_id_native),]
 
 
-newdata <- mtcars[order(mpg, cyl),]
 
