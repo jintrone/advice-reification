@@ -191,7 +191,7 @@ cf<-function(x) {
 
 
 # Get's the subgraph corresponding to a component
-# Not that this function decorates nodes with a "level" property, corresponding to the day
+# Note that this function decorates nodes with a "level" property, corresponding to the day
 # This is used in the sugiyama plots below
 #  g - the graph to be analysed
 #  comp - the component to be extracted
