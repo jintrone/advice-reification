@@ -11,9 +11,18 @@ require(igraph)
 require(viridis)
 require(ggpubr)
 
+# Goggins Laptop
+Sys.setenv("RProj_Data_Dir" = "/Users/seanpgoggins/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
+
+# Goggins Home Computer
+# Sys.setenv("RProj_Data_Dir" = "/Volumes/SeansRAIDBaby/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
+
+
+
+
 source("distpointline.r")
 
-data_dir = "../data/"
+data_dir = Sys.getenv("RProj_Data_Dir")
 
 loadSummaryData<-function() {
   path <- str_c(data_dir,"/components/")
@@ -31,10 +40,10 @@ loadSummaryData<-function() {
 #  csize - Number of posts in the component
 #  triangles - 
 
-loadPostingData<-function(corpus) {
+loadPosts<-function(corpus) {
   require(RMySQL)
   con<-dbConnect(MySQL(),user=dbuser,password=dbpassword,dbname=dbname,host=host)
-  rs<-dbSendQuery(con,paste("select qid, localID, date, poster from ",corpus,sep=""))
+  rs<-dbSendQuery(con,paste("select qid, localID, date, poster, inferred_replies, replyTo, cleancontent, title from ",corpus,sep=""))
   data<-fetch(rs,n=-1)
   dbDisconnect(con)
   return(data)
@@ -128,11 +137,12 @@ sd(CTCIndex_Ordered$csize)
 nrow(CTCIndex_Ordered[(CTCIndex_Ordered$csize > 8),])
 nrow(CTCIndex_Ordered[(CTCIndex_Ordered$csize > 8) && (CTCIndex_Ordered$csize < 900),])
 
-plot(CTCIndex_Ordered$comp, log(CTCIndex_Ordered$csize))
+# plot(CTCIndex_Ordered$comp, log(CTCIndex_Ordered$csize))
 
 csizedist <- CTCIndex_Ordered %>%
               group_by(csize) %>%
               summarise(counts=n())
+
 
 ggplot(csizedist, aes(x = csize, y = counts)) +
   geom_bar(fill = "#0073C2FF", stat = "identity") +
@@ -141,3 +151,15 @@ ggplot(csizedist, aes(x = csize, y = counts)) +
   theme_pubclean()
 
 component13 <- CTCIndex_Ordered[(CTCIndex_Ordered$comp==13),]
+
+
+forumlist <- component13 %>%
+              group_by(poster, corpus) %>%
+              summarise(counts=n())
+
+component13_posts <- loadAllPosts("sexual_conditions_and_stds_exchange")
+
+
+
+## Next, load the posts in this component only
+
