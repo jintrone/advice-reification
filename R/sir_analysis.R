@@ -24,3 +24,4 @@ plotSIRValues<-function(d) {
   d<- d %>% group_by(class) %>% mutate(scaled = value/max(value))
   ggplot(d,aes(x=date,y=scaled,color=state))+geom_line()+facet_grid(class~topic)
 }
+

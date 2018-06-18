@@ -1,3 +1,5 @@
+## Clear the decks
+rm(list=ls())
 #UNIVERSAL FUNCTIONS
 require(reshape2)
 require(ggplot2)
@@ -14,11 +16,19 @@ test_corpora = c("add_and_adhd_exchange","alzheimers_exchange","asthma_exchange"
 ncorpora = c("allergies_exchange","anxiety_and_panic_disorders_exchange","bipolar_disorder_exchange","colorectal_cancer_exchange","depression_exchange","erectile_dysfunction_exchange","food_and_cooking_exchange","gynecology_exchange","heart_disease_exchange","hypertension_and_high_blood_pressure_exchange","infertility_and_reproduction_exchange","knee_and_hip_replacement_exchange","lupus_exchange","mens_health_community","migraines_and_headaches_exchange","newborn_and_baby_exchange","oral_health_exchange","osteoarthritis_exchange","pet_health_exchange","pregnancy_exchange","prostate_cancer_exchange","rheumatoid_arthritis_exchange","skin_and_beauty_exchange","skin_problems_and_treatments_exchange","sleep_disorders_exchange","smoking_cessation_exchange","sports_medicine_exchange","stroke_exchange","substance_abuse_exchange")
 
 # enviroment variables
-dbname = "webmd_enriched"
-dbuser = "root"
-dbpassword = "lji123"
+# dbname = "webmd_enriched"
+# dbuser = "root"
+# dbpassword = "lji123"
 
-data_dir = "../../data/"
+dbname = "webmd"
+dbuser = "webmd"
+dbpassword = "pickle"
+host = "augurlabs.io"
+
+
+#data_dir = "../../data/"
+# Goggins data directory is one level above .. not sure why the difference. 
+data_dir = "../data/"
 
 
 ###############
@@ -30,7 +40,7 @@ data_dir = "../../data/"
 # corpus - the name of the corpus (see the list of corpora in the 'corpora' variable above)
 loadPostingData<-function(corpus) {
   require(RMySQL)
-  con<-dbConnect(MySQL(),user=dbuser,password=dbpassword,dbname=dbname,host="localhost")
+  con<-dbConnect(MySQL(),user=dbuser,password=dbpassword,dbname=dbname,host=host)
   rs<-dbSendQuery(con,paste("select qid, localID, date, poster from ",corpus,sep=""))
   data<-fetch(rs,n=-1)
   dbDisconnect(con)
@@ -54,6 +64,11 @@ loadInterpostData<-function() {
 #  end - the desired end date to be read in
 #  topic - the topic method (part of the filename to be read in)
 #  gap - the cutoff (k) that was used to generate the file (part of the filename)
+
+## Tracing back to groovy and the cutoff k I find files with gaps that are 
+## inconsistently named, which is consistent with the cutoffs.csv file
+## Not finding anything with the gap = 28, actually 
+
 loadData<- function(corpus,start="2009-01-01",end="2014-01-01",topic="NMF",gap=28) {
   file = str_c(data_dir,corpus,"_dag.",gap,".",topic,".csv",sep="")
   print(file)
@@ -176,7 +191,7 @@ cf<-function(x) {
 
 
 # Get's the subgraph corresponding to a component
-# Not that this function decorates nodes with a "level" property, corresponding to the day
+# Note that this function decorates nodes with a "level" property, corresponding to the day
 # This is used in the sugiyama plots below
 #  g - the graph to be analysed
 #  comp - the component to be extracted
@@ -291,6 +306,10 @@ sensitivityAnalysis<-function(tree) {
   vf<-Vectorize(f)
   tibble(cutoff=0:20/40)%>%mutate(c=vf(cutoff))
 }
+
+### Seeking an empirical or literature based
+### foundation for this elbow function in 
+### response to reviewer feedback.
 
 findElbow<-function(data) {
   data<-data %>% mutate(n=(comps-min(comps))/(max(comps)-min(comps))) %>% mutate(d=distancePointLine(cutoff,n,1,0))
@@ -464,7 +483,7 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   
   r<-bind_rows(r,others) %>% mutate(corpus=corpus)
   
-  write.csv(r,file=paste(corpus,"_nodedesc.csv",sep=""))
+  write.csv(r,file=paste(corpus-spg,"_nodedesc.csv",sep=""))
   print(paste("Done:",corpus))
   #return(r)
   
