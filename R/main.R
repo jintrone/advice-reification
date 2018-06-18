@@ -1,3 +1,5 @@
+## Clear the decks
+rm(list=ls())
 #UNIVERSAL FUNCTIONS
 require(reshape2)
 require(ggplot2)
