@@ -40,10 +40,19 @@ loadSummaryData<-function() {
 #  csize - Number of posts in the component
 #  triangles - 
 
-loadPosts<-function(corpus) {
+loadAllPosts<-function(corpus) {
   require(RMySQL)
   con<-dbConnect(MySQL(),user=dbuser,password=dbpassword,dbname=dbname,host=host)
-  rs<-dbSendQuery(con,paste("select qid, localID, date, poster, inferred_replies, replyTo, cleancontent, title from ",corpus,sep=""))
+  rs<-dbSendQuery(con,paste("select uniqueID, qid, localID, date, poster, inferred_replies, replyTo, cleancontent, title from ",corpus,sep=""))
+  data<-fetch(rs,n=-1)
+  dbDisconnect(con)
+  return(data)
+}
+
+loadCTCPosts<-function(corpus) {
+  require(RMySQL)
+  con<-dbConnect(MySQL(),user=dbuser,password=dbpassword,dbname=dbname,host=host)
+  rs<-dbSendQuery(con,paste("select uniqueID, qid, localID, date, poster, inferred_replies, replyTo, cleancontent, title from ",corpus,sep=""))
   data<-fetch(rs,n=-1)
   dbDisconnect(con)
   return(data)
@@ -162,4 +171,7 @@ component13_posts <- loadAllPosts("sexual_conditions_and_stds_exchange")
 
 
 ## Next, load the posts in this component only
+
+CTCPostIDs <- as.data.frame(component13$post_id_native)
+
 
