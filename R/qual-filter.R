@@ -82,7 +82,7 @@ class(CTCIndex$time) = c('POSIXt','POSIXct')
 CTCIndex$comp <- as.factor(CTCIndex$comp)
 CTCIndex$topic <- as.factor(CTCIndex$topic)
 
-colnames(CTCIndex)[2] <- "post_id_native"
+colnames(CTCIndex)[2] <- "uniqueID"
 colnames(CTCIndex)[3] <- "post_timestamp"
 
 
@@ -173,5 +173,9 @@ component13_posts <- loadAllPosts("sexual_conditions_and_stds_exchange")
 ## Next, load the posts in this component only
 
 CTCPostIDs <- as.data.frame(component13$post_id_native)
+CTC_Set <- merge(component13, component13_posts)
+
+CTC_Set_DateOrder <- CTC_Set[order(CTC_Set$post_timestamp),]
+
 
 
