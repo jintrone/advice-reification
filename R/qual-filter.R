@@ -10,12 +10,15 @@ library(stringr)
 require(igraph)
 require(viridis)
 require(ggpubr)
-
+library(QCA)
+library(GGally)
+library(tnet)
+library(geomnet)
 # Goggins Laptop
-Sys.setenv("RProj_Data_Dir" = "/Users/seanpgoggins/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
+# Sys.setenv("RProj_Data_Dir" = "/Users/seanpgoggins/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
 
 # Goggins Home Computer
-# Sys.setenv("RProj_Data_Dir" = "/Volumes/SeansRAIDBaby/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
+Sys.setenv("RProj_Data_Dir" = "/Volumes/SeansRAIDBaby/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
 
 
 
@@ -177,5 +180,53 @@ CTC_Set <- merge(component13, component13_posts)
 
 CTC_Set_DateOrder <- CTC_Set[order(CTC_Set$post_timestamp),]
 
+write.csv(CTC_Set_DateOrder, file="component13.csv")
+
+## Looking into the network of QID and Poster, 
+## This will give us a sense of posters who cross into 
+## Other threads together
+
+
+edgelist <- data.frame(CTC_Set_DateOrder$pid, CTC_Set_DateOrder$poster, as.integer(CTC_Set_DateOrder$qid), CTC_Set_DateOrder$title)
+names(edgelist) <- c("PersonID", "Person", "ThreadID", "ThreadSubject")
+
+
+edgelist$poster <- paste("P", edgelist$PersonID, sep="")
+edgelist$title <- paste("T", edgelist$ThreadID, sep="")
+
+davis <- edgelist
+
+names(davis) <- c("from", "fromPerson", "to", "toThread")
+
+davis$type <- factor(c(rep("Person",nrow(edgelist))))
+davis <- rbind(davis, data.frame(from=davis$to, fromPerson=davis$fromPerson, toThread=davis$toThread, to=davis$from, type="Thread"))
+
+bip = xtabs(~PersonID+ThreadID, data=edgelist)
+
+bip = network::network(bip,
+                       matrix.type = "bipartite",
+                       ignore.eval = FALSE,
+                       names.eval = "weights")
+
+davis$lcolour <- factor(c("white", "black")[as.numeric(davis$type)])
+
+set.seed(8262013)
+ggplot(data = davis) + 
+  geom_net(layout.alg = "kamadakawai",
+           aes(from_id = fromPerson, to_id = toThread, 
+               colour = type, shape = type), 
+           size = 3, labelon = FALSE,  ealpha = 0.25,
+           vjust = 0.5, hjust = 0.5,
+           labelcolour = davis$lcolour) +
+  theme_net() + 
+  scale_colour_brewer("Type of node", palette = "Set2") +
+  scale_shape("Type of node") +
+  theme(legend.position = "bottom")
+#davis$type <- factor(c(rep("fromPerson", nrow(elist)), rep("toThread", nrow(elist))))
+
+
+
+# sm <- as.sociomatrix(edgelist, loops=TRUE)
+# net < as.network(sm)
 
 
