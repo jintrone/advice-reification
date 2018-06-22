@@ -75,23 +75,19 @@ buildComponentFile<-function() {
     )
 }
 
-loadAllPosts<-function(corpus) {
-  require(RMySQL)
-  con<-dbConnect(MySQL(),user=dbuser,password=dbpassword,dbname=dbname,host=host)
-  rs<-dbSendQuery(con,paste("select uniqueID, qid, localID, date, poster, inferred_replies, replyTo, cleancontent, title from ",corpus,sep=""))
-  data<-fetch(rs,n=-1)
-  dbDisconnect(con)
-  return(data)
-}
+
 
 dbname = "webmd"
 dbuser = "webmd"
 dbpassword = "pickle"
 host = "augurlabs.io"
 
+# Component File is Built
 buildComponentFile()
 
+## The "test" file was then imported into WebMD database as a components table
 test <- read.csv("all.csv")
+
 
 
 
