@@ -433,7 +433,28 @@ summarizeComponents<-function(graph,comp=NULL) {
   } else {
     sg<-graph
   }
+### All this is doing is printing out all the vertext attributes
+  ### We need one edge attribute, which is the parent of each post
+  ### 
   df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
+  
+  #  df2 <- as.data.frame(lapply(getParent(graph, )))
+  ## We think the name of the vertex will be the nodeID that I pass into this 
+  ## "Get Parent" function
+  ## There's a column in the nodeDesc files which is the postID
+  
+  ## Need to know for each vertex, what the vertex on the other end of the edge is
+  ## This "name" should be the "postid", like 158_9 or some such thing 
+  
+  ## apply a function to the dataframe (every row) to generate a new column 
+  ### Name it "source"
+  
+  #TODO: KEY: Regenerate the components files so I can see what came before each row in the 
+  ## THe component ... 
+  ## Sometimes, will need to go back to the original thread to see the interaction
+  ## Maybe need to do that sometimes but not all the times ... 
+  
+  
   df$maxpth<-maxPath(sg,V(sg))
   df$indegree<-degree(sg,V(sg),mode="in")
   df$outdegree<-degree(sg,V(sg),mode="out")
@@ -441,6 +462,30 @@ summarizeComponents<-function(graph,comp=NULL) {
   df$triangles<-count_triangles(sg)
   df$csize<-nrow(df)
   return(df)
+}
+
+### Need a function to 
+##
+
+getParent <- function(graph, nodeID) {
+  ## will generate the ego graph for the node
+  ## 
+  ## igraph
+  ### this should give us an egograph 
+  ## order = nodeID ... order = 1 is node and adjacent nodes
+  ## order = 0 is the node itself
+  ## we need to get the post ID off of the node that part of this .. 
+  nodesAround <- ego(graph, order=1, nodes = nodeID, mode = "in")
+  
+  ## get the nodelist off the iGraph
+  ## subtract out the nodID I passed in
+  
+  ## That will leave me with a list of 1 node
+  
+  ## that NodeID is, we think, the postID
+  
+  
+  
 }
 
 vsummarizeComponents<-Vectorize(summarizeComponents,vectorize.args = "comp",SIMPLIFY=FALSE)
