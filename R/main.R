@@ -298,6 +298,7 @@ summarizeComponents<-function(graph,comp=NULL) {
     sg<-getSubgraph(graph,comp)
     ##debugging notes
     print("subgraph section executed")
+    print_all(sg)    
     # png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
     # plot.igraph(sg)
     # dev.off()
@@ -305,11 +306,11 @@ summarizeComponents<-function(graph,comp=NULL) {
     print("original graph as subgraph")
     sg<-graph
   }
-### All this is doing is printing out all the vertext attributes
+  ### All this is doing is printing out all the vertext attributes
   ### We need one edge attribute, which is the parent of each post
   ### 
   df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
-  print(str(df))
+  #  print(str(df))
   #  df2 <- as.data.frame(lapply(getParent(graph, )))
   ## We think the name of the vertex will be the nodeID that I pass into this 
   ## "Get Parent" function
@@ -351,13 +352,7 @@ getParent <- function(graph, nodeID) {
   ## order = 0 is the node itself
   ## we need to get the post ID off of the node that part of this .. 
   nodesAround <- ego(graph, order=0, nodes = nodeID, mode = "in")
- # print(class(nodesAround))
- # print(nodesAround)
-  png("test03b.png")
-  plot.igraph(graph)
-  dev.off()
-  
-  
+
   ## get the nodelist off the iGraph
   ## subtract out the nodID I passed in
   
@@ -399,6 +394,18 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   elbow<-findElbow(analyzeComponents(d,step=.01))
   g <- buildGraph(d,elbow)
   c<-inspectComponents(g)
+  ## Resulting component is a tibble with
+  ## two columns. 
+  # c - component ID
+  # a - number of nodes in the component 
+  
+  print("component class")
+  print(class(c))
+  print("component info")
+  print(c)
+  
+  ## These get added to the printed dataframe at the end. 
+  ## Its unclear to me what this is for ... level, path and triangels are set to 0
   others<- as.data.frame(lapply(list.vertex.attributes(g),function(x) get.vertex.attribute(g,x)),col.names = list.vertex.attributes(g))
   others<-others[(others$comp %in% c[c$a==1,]$c),]
   others$level<-0
@@ -417,7 +424,7 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   # print(r)
   
   
-  write.csv(r,file=paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
+  write.csv(r,file=paste0(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
   print(paste("Done:",corpus))
   #return(r)
   
