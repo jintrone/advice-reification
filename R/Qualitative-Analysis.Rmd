@@ -1,0 +1,111 @@
+---
+title: 'Qualitative Analysis: Cross Threaded Forums'
+author: "Sean Goggins"
+date: "6/22/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup Environment
+```{R}
+rm(list=ls())
+#UNIVERSAL FUNCTIONS
+require(reshape2)
+require(ggplot2)
+require(ggrepel)
+require(lubridate)
+library(dplyr)
+library(stringr)
+require(igraph)
+require(viridis)
+require(ggpubr)
+library(QCA)
+library(GGally)
+library(tnet)
+library(geomnet)
+Sys.setenv("RProj_Data_Dir" = "/Volumes/SeansRAIDBaby/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
+source("distpointline.r")
+data_dir = Sys.getenv("RProj_Data_Dir")
+```
+
+## Errors in functions
+
+### Results from:
+```{R}
+path <- str_c(data_dir,"/components/")
+test <- read.csv(paste(path,"stroke_exchange_nodedesc.csv",sep=""))
+summary(test)
+```
+```
+> str(test)
+'data.frame':	697 obs. of  15 variables:
+ $ X        : int  1 2 3 4 5 6 7 8 9 10 ...
+ $ name     : Factor w/ 697 levels "1_5","1_6","108_3",..: 128 170 172 169 190 182 200 117 660 674 ...
+ $ time     : int  1278133031 1278115888 1279141057 1278600340 1279853901 1279856319 1280259869 1272976289 1345564189 1349643243 ...
+ $ poster   : Factor w/ 291 levels "1010galleria",..: 187 152 10 10 10 10 10 279 213 213 ...
+ $ user     : Factor w/ 3 levels "C","P","XP": 2 3 2 2 2 2 2 3 1 1 ...
+ $ topic    : int  7 7 7 7 7 7 7 0 0 0 ...
+ $ pid      : int  182 147 10 10 10 10 10 272 207 207 ...
+ $ comp     : int  86 86 86 86 86 86 86 283 283 283 ...
+ $ level    : int  0 0 11 5 20 20 24 0 840 887 ...
+ $ maxpth   : int  0 0 1 1 1 1 1 0 1 1 ...
+ $ indegree : int  0 0 2 1 1 1 2 0 1 1 ...
+ $ outdegree: int  4 3 0 0 0 0 0 2 0 0 ...
+ $ triangles: int  0 0 0 0 0 0 0 0 0 0 ...
+ $ csize    : int  7 7 7 7 7 7 7 3 3 3 ...
+ $ corpus   : Factor w/ 1 level "stroke_exchange": 1 1 1 1 1 1 1 1 1 1 ...
+```
+### Results from: 
+```{R}
+loadSummaryData<-function() {
+  path <- str_c(data_dir,"/components/")
+  bind_rows(sapply(list.files(path = path,pattern = "*_nodedesc.csv"),function(x) read.csv(paste(path,x,sep=""))))
+}
+
+CTCIndex <- loadSummaryData()
+
+summary(CTCIndex)
+
+```
+```
+> str(CTCIndex)
+'data.frame':	398938 obs. of  15 variables:
+ $ X        : int  1 2 3 4 5 6 7 8 9 10 ...
+ $ name     : chr  "757_4" "158_7" "177_0" "699_5" ...
+ $ time     : num  1.23e+09 1.23e+09 1.24e+09 1.24e+09 1.24e+09 ...
+ $ poster   : chr  "ChristophorM" "ChristophorM" "teeny79" "ChristophorM" ...
+ $ user     : Factor w/ 3 levels "C","P","XP": 1 1 2 1 2 2 3 2 3 2 ...
+ $ topic    : int  17 17 17 17 17 17 10 10 10 10 ...
+ $ pid      : int  308 308 1059 308 1059 1059 671 266 705 812 ...
+ $ comp     : int  150 150 150 150 150 150 1143 1143 1143 1143 ...
+ $ level    : int  0 2 14 62 71 64 0 0 19 46 ...
+ $ maxpth   : int  0 0 1 0 1 1 0 0 0 0 ...
+ $ indegree : int  0 0 2 0 2 1 0 0 0 0 ...
+ $ outdegree: int  1 2 0 2 0 0 1 2 1 2 ...
+ $ triangles: int  0 0 0 0 0 0 0 0 0 0 ...
+ $ csize    : int  6 6 6 6 6 6 6 6 6 6 ...
+ $ corpus   : chr  "add_and_adhd_exchange" "add_and_adhd_exchange" "add_and_adhd_exchange" "add_and_adhd_exchange" ...
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
