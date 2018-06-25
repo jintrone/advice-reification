@@ -7,7 +7,15 @@ require(lubridate)
 library(dplyr)
 library(stringr)
 
+# Goggins Laptop
+# Sys.setenv("RProj_Data_Dir" = "/Users/seanpgoggins/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
+
+# Goggins Home Computer
+Sys.setenv("RProj_Data_Dir" = "/Volumes/SeansRAIDBaby/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data")
+
 source("distpointline.r")
+
+data_dir = Sys.getenv("RProj_Data_Dir")
 
 corpora = c("add_and_adhd_exchange","alzheimers_exchange","asthma_exchange","back_pain_exchange","breast_cancer_exchange","cholesterol_management_exchange","diabetes_exchange","diet_exchange","digestive_disorders_exchange","epilepsy_exchange","fibromyalgia_exchange","fitness_and_exercise_exchange","hepatitis_exchange","hiv_and_aids_exchange","menopause_exchange","multiple_sclerosis_exchange","osteoporosis_exchange","pain_management_exchange","parenting_exchange","parkinsons_disease_exchange","relationships_and_coping_community","sex_and_relationships_exchange","sexual_conditions_and_stds_exchange")
 test_corpora = c("add_and_adhd_exchange","alzheimers_exchange","asthma_exchange")
@@ -24,11 +32,6 @@ dbname = "webmd"
 dbuser = "webmd"
 dbpassword = "pickle"
 host = "augurlabs.io"
-
-
-#data_dir = "../../data/"
-# Goggins data directory is one level above .. not sure why the difference. 
-data_dir = "../data/"
 
 
 ###############
@@ -184,7 +187,7 @@ scaleTo<-function(x,y,min=-1,max=1) {
 }
 
 
-ƒ
+
 cf<-function(x) {
   c("red","orange","blue")[match(x,c("C","P","XP"))]
 }
@@ -558,13 +561,13 @@ plotPathDescription<-function() {
  
 }
 
-plotHeatmap<-function(data,cl,ul) {
-  ggplot(data,aes(csbin,urbin,))+geom_tile(aes(fill=rescale(clout),alpha=cs3),color="white")+
-    scale_fill_viridis(name="Coreness",direction=-1)+scale_alpha_identity()+
-    theme_minimal()+scale_x_continuous(breaks=c(1:10),labels=cl)+
-    scale_y_continuous(breaks=c(1:10),labels=ul)+theme(panel.grid.minor=element_blank(),panel.grid.major = element_blank())+
-    xlab("Conversation size")+ylab("User/post ratio")
-}
+# plotHeatmap<-function(data,cl,ul) {
+#   ggplot(data,aes(csbin,urbin,))+geom_tile(aes(fill=rescale(clout),alpha=cs3),color="white")+
+#     scale_fill_viridis(name="Coreness",direction=-1)+scale_alpha_identity()+
+#     theme_minimal()+scale_x_continuous(breaks=c(1:10),labels=cl)+
+#     scale_y_continuous(breaks=c(1:10),labels=ul)+theme(panel.grid.minor=element_blank(),panel.grid.major = element_blank())+
+#     xlab("Conversation size")+ylab("User/post ratio")
+# }
 
 
 
