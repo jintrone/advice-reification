@@ -1,3 +1,5 @@
+# Building the component stuff
+
 rm(list=ls())
 #UNIVERSAL FUNCTIONS
 require(reshape2)
@@ -21,15 +23,19 @@ gapper <- transform(gapper, gap = round(K))
 for (i in 1:nrow(gapper))
 {
   cutoff <- round(gapper[i,]$K)
-  corpus <- gapper[i,]$corpus
+  thisCorpus <- as.character(gapper[i,]$corpus)
  # print(corpus)
  # print(cutoff)
  # print("test")
-  
-  if (corpus %in% corpora)
+  print(str(thisCorpus))
+  print(class(thisCorpus))
+  if (thisCorpus %in% corpora)
   {
    # print(paste(i," Yes ! "))
    # doAll(corpus,gapper)
-    pipelineToFile(corpus, topic = "NMF", gapper)
+    # print("breaker")
+    # print(thisCorpus)
+    # print("breaker")
+    pipelineToFile(thisCorpus, topic = "NMF", gapper)
   }
 }                   

@@ -17,9 +17,9 @@ if (Sys.info()["nodename"] == "BlackChopper.local")
   Sys.setenv("RProj_Data_Dir" = "/Users/seanpgoggins/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data/")  
 }
 
-
-
 source("distpointline.r")
+source("main-plotting-functions.R")
+source("main-groovy-cutoffs.R")
 
 data_dir = Sys.getenv("RProj_Data_Dir")
 
@@ -42,9 +42,8 @@ dbpassword = "pickle"
 host = "augurlabs.io"
 
 
-###############
-# I/O FUNCTIONS
-###############
+
+# I/O Functions -----------------------------------------------------------
 
 #Loads corpus specific data from the database. 
 #Make sure to configure the relevant db parameters first
@@ -58,12 +57,6 @@ loadPostingData<-function(corpus) {
   return(data)
 }
 
-#Loads interpost times (times between successive posts by a user) from a file
-#Code to generate interpost times in Groovy project
-loadInterpostData<-function() {
-  read.csv(str_c(data_dir,"all.innerposttimes.csv"))
-  
-}
 
 # Loads tree data (the set of all CTCs in a corpus) specific to a corpus from a file
 # Note that the tree files are produced with a specific "gap"
@@ -82,7 +75,7 @@ loadInterpostData<-function() {
 
 loadData<- function(corpus,start="2009-01-01",end="2014-01-01",topic="NMF",gap=28) {
   file = str_c(data_dir,corpus,"_dag.",gap,".",topic,".csv",sep="")
-  print(file)
+  # print(file)
   tree<-read.csv(file)
   tree<-tree[tree$f.uniqueId!="NULL" & tree$t.uniqueId!="NULL",]
   tree$f.date<-as.POSIXct(tree$f.date,format="%Y-%m-%d %H:%M:%S")
@@ -99,11 +92,8 @@ loadSummaryData<-function() {
   bind_rows(lapply(list.files(path=path,pattern="*_nodedesc.csv"),function(x) read.csv(paste(path,x,sep=""))))
 }
 
-###################
-#GRAPH CONSTRUCTION
-###################
 
-
+# Graph Construction ------------------------------------------------------
 # Core graph function; generates graph from a tree file
 # returns an igraph object
 #   data - a tree, loaded by the 'loadData' command
@@ -142,9 +132,7 @@ buildGraph<-function(data=NULL,cutoff=0.0,graph=NULL) {
 }
 
 
-####################
-# ANALYSIS FUNCTIONS
-####################
+# Analysis Functions ------------------------------------------------------
 
 # Sensitivity analysis for parameter S (similarity).  Traces the number of components
 # generated as we step through various cutoff values.  Generate a table with the number
@@ -168,148 +156,6 @@ analyzeComponents<-function(data=NULL,step = 0.1,graph=NULL) {
   tibble(cutoff=x,comps=result)
 } 
 
-# Give a graph with nodes labelled by component id list the components
-# by size (the number of nodes) in decending order
-#  graph - the graph to analyze
-inspectComponents<-function(g) {
-  tibble(c=V(g)$comp) %>% group_by(c) %>% summarise(a=n()) %>% arrange(-a)
-}
-
-# Generate the cutoff values based on interpost times
-# Corresponds to parameter K
-
-## This is only used to generate cutoffs for the groovy project
-generateCutoffs<-function() {
-  d<-loadInterpostData()
-  d%>%group_by(corpus)%>%filter(delta>0)%>%summarise(M=mean(log(delta)),K=exp(mean(log(delta))+(2*sd(log(delta)))))
-}
-
-
-
-
-
-#######################
-# PLOTTING FUNCTIONS
-#######################
-
-scaleTo<-function(x,y,min=-1,max=1) {
-  ((x-min(x))/(max(y)-min(y)))*(max-min)-((max-min)/2)
-}
-
-
-
-cf<-function(x) {
-  c("red","orange","blue")[match(x,c("C","P","XP"))]
-}
-
-
-# Get's the subgraph corresponding to a component
-# Note that this function decorates nodes with a "level" property, corresponding to the day
-# This is used in the sugiyama plots below
-#  g - the graph to be analysed
-#  comp - the component to be extracted
-getSubgraph<-function(g,comp) {
-  indices<-which(V(g)$comp==comp)
-  sg<-induced_subgraph(g,indices)
-  set_vertex_attr(sg,"level",value=floor((V(sg)$time - min(V(sg)$time))/(60*60*24)))
-}
-
-# Produce a simple edgelist for the graph
-#   graph - the graph to be examined
-inspectEdges<-function(graph) {
-  tibble(from = head_of(graph,E(graph))$name,to = tail_of(graph,E(graph))$name)
-}
-
-# Plots a subcomponent (indicated by the id of the component) of a graph using the sugiyama layout
-# The sugiyama layout is a layered layout, that places each node on a level - in this case the level is determined 
-# by a discreted timestamp (NOTE: this function might be broken right now!)
-#   graph - the graph to plot
-#   comp - the component id (numeric) to plot
-plotSubgraphAsSugiyama<-function(graph,comp) {
-  sg<-getSubgraph(graph,comp) 
-  #tmp<-tibble(v=V(sg),l=V(sg)$level)
-  #tmp<-tmp %>% group_by(l) %>% mutate(c=as.vector(components((induced_subgraph(sg,v)),"weak")[['membership']]))
-  #tmp<- tmp %>% mutate(label=(l*100)+c)
-  #tmp<-arrange(tmp,label)
-  
-  #x<-data.frame(id=unique(tmp$label))
-  #x$order<-1:nrow(x)
-  #tmp<-merge(tmp,x,by.x="label",by.y="id")
-  #sg<-contract(sg,tmp$order,vertex.attr.comb = list(name="concat","first"))
-  #sg<-set_vertex_attr(sg,"size",value=as.vector(sapply(V(sg)$name,length)))
-  
-  #E(sg)$weight<-count_multiple(sg)
-  #sg<-simplify(sg)
-  #delete_edges(sg,which(head_of(sg,E(sg))$level==tail_of(sg,E(sg))$level))
-  l<-layout_with_sugiyama(sg,layer=V(sg)$level,vgap=10,hgap=1)
-  origvert <- c(rep(TRUE, vcount(sg)), rep(FALSE, nrow(l$layout.dummy)))
-  realedge <- as_edgelist(l$extd_graph)[,2] <= vcount(sg)
-  
-  #print(scaleTo(l$extd_graph$layout[,2],))
-  l$extd_graph$layout[,1]=scaleTo(l$extd_graph$layout[,1],l$extd_graph$layout[,1])
-  l$extd_graph$layout[,2]=scaleTo(l$extd_graph$layout[,2],l$extd_graph$layout[,2],min=-4,max=4)
-  #print(l$extd_graph$layout)
-  
-  plot(l$extd_graph,vertex.label.cex=.75,
-       vertex.label.family="sans",
-       vertex.label.dist=.5,
-       edge.arrow.size=.25,
-       rescale=FALSE,
-       vertex.frame.color=NA,
-       edge.width=.5,
-       vertex.color = ifelse(origvert,V(sg)$pid, ""),
-       #vertex.size=ifelse(origvert, V(sg)$size*5, 0),
-       vertex.size=ifelse(origvert, 5, 0),
-       vertex.shape=ifelse(origvert, "circle", "none"),
-       vertex.label=ifelse(origvert, V(sg)$name,""),
-       edge.arrow.mode=0,margin=c(0,0,10,10))
-}
-
-
-# Plots a set of indices of a graph using the sugiyama layout
-# The sugiyama layout is a layered layout, that places each node on a level - in this case the level is determined 
-# by a discreted timestamp (NOTE: this function might be broken right now!)
-#   graph - the graph to plot
-#   comp - the component id (numeric) to plot
-plotSimpleSubgraph<-function(graph,indices) {
-  sg<-getSubgraph(graph,indices) 
-  l<-layout_with_sugiyama(sg,layers=V(sg)$level,vgap=10,hgap=1)
-  print(l$layout)
-  l$layout[,1]=scaleTo(l$layout[,1],l$layout[,1])
-  l$layout[,2]=scaleTo(l$layout[,2],l$layout[,2],min=-2,max=2)
-
-  plot(sg,layout=l$layout,vertex.label.cex=.75,
-       edge.arrow.size=.25,
-       rescale=FALSE,
-       vertex.frame.color=NA,
-       edge.width=.5,
-       vertex.color = cf(V(sg)$user),
-       #vertex.size=ifelse(origvert, V(sg)$size*5, 0),
-       vertex.size=4,
-       vertex.shape="circle",
-       vertex.label=V(sg)$name,
-       edge.arrow.mode=0,margin=c(0,0,10,10))
-  
-}
-
-plotSubgraphAsTree<-function(graph,indices) {
-  sg<-induced_subgraph(graph,indices)
-  levels <- floor((V(sg)$time - min(V(sg)$time))/(60*60*24))
-  r<-which(V(sg)$time == min(V(sg)$time))
-  
-  l<-layout_as_tree(sg,circular = TRUE, root=r) 
-  
-  plot(sg,
-       edge.arrow.size=.25,
-       rescale=TRUE,
-       vertex.frame.color=NA,
-       edge.width=.5,
-       vertex.color = cf(V(sg)$user),
-       vertex.size=5,
-       vertex.shape="circle",
-       vertex.label="",
-       edge.arrow.mode=2, layout=layout_with_kk)
-}
 
 f<-function(x) {
   max(V(buildGraph(tree,x))$comp)
@@ -412,10 +258,6 @@ inDegree<-function(g,idx) {
 
 maxPath<-Vectorize(maxPath,vectorize.args = "idx")
 
-
-
-
-
 applyToComponents<-function(graph,minsize=-1,maxsize=Inf) {
     c<-inspectComponents(graph)
     numcomps<-nrow(c)
@@ -440,42 +282,36 @@ applyToComponents<-function(graph,minsize=-1,maxsize=Inf) {
 }
 
 
+
+# Component Pipeline ------------------------------------------------------
+
+# Give a graph with nodes labelled by component id list the components
+# by size (the number of nodes) in decending order
+#  graph - the graph to analyze
+inspectComponents<-function(g) {
+  tibble(c=V(g)$comp) %>% group_by(c) %>% summarise(a=n()) %>% arrange(-a)
+}
+
+
+## Main summarization function 
 summarizeComponents<-function(graph,comp=NULL) {
   if (!is.null(comp)) {
     sg<-getSubgraph(graph,comp)
+    print(comp)
     ##debugging notes
-    print("subgraph section executed")
-    # png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
-    # plot.igraph(sg)
-    # dev.off()
+    # print("subgraph section executed")
+    # print_all(sg)    
+    png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
+    plot.igraph(sg)
+    dev.off()
   } else {
     print("original graph as subgraph")
     sg<-graph
   }
-### All this is doing is printing out all the vertext attributes
-  ### We need one edge attribute, which is the parent of each post
-  ### 
-  df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
-  print(str(df))
-  #  df2 <- as.data.frame(lapply(getParent(graph, )))
-  ## We think the name of the vertex will be the nodeID that I pass into this 
-  ## "Get Parent" function
-  ## There's a column in the nodeDesc files which is the postID
-  
-  ## Need to know for each vertex, what the vertex on the other end of the edge is
-  ## This "name" should be the "postid", like 158_9 or some such thing 
-  
-  ## apply a function to the dataframe (every row) to generate a new column 
-  ### Name it "source"
-  
-  ## Debugging and looking at edge information
+
+    df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
+ 
   vSearch <- as.data.frame(lapply(list.edge.attributes(sg),function(x) get.edge.attribute(sg,x)),col.names = list.edge.attributes(sg))
-  # print(vSearch)
-  
-  #TODO: KEY: Regenerate the components files so I can see what came before each row in the 
-  ## THe component ... 
-  ## Sometimes, will need to go back to the original thread to see the interaction
-  ## Maybe need to do that sometimes but not all the times ... 
   
   df$otherVertex <- getParent(sg,V(sg))
   
@@ -488,10 +324,8 @@ summarizeComponents<-function(graph,comp=NULL) {
   return(df)
 }
 
-### Need a function to 
-##
 
-getParent <- function(graph, nodeID) {
+getParent <- function(g, idx) {
   ## will generate the ego graph for the node
   ## 
   ## igraph
@@ -499,20 +333,25 @@ getParent <- function(graph, nodeID) {
   ## order = nodeID ... order = 1 is node and adjacent nodes
   ## order = 0 is the node itself
   ## we need to get the post ID off of the node that part of this .. 
-  nodesAround <- ego(graph, order=0, nodes = nodeID, mode = "in")
- # print(class(nodesAround))
- # print(nodesAround)
-  png("test03b.png")
-  plot.igraph(graph)
-  dev.off()
+
+  # nodesAround <- ego(graph, order=0, nodes = nodeID, mode = "in")
+  d<-adjacent_vertices(g,v=V(g)[idx],mode="in")
+  # d<-d[which(!is.infinite(d))]
+    
+  nodesAround <- d    
+  print("D")
+  print(d)
+  # print(nodesAround$names)
+
   ## get the nodelist off the iGraph
   ## subtract out the nodID I passed in
   
   ## That will leave me with a list of 1 node
   
   ## that NodeID is, we think, the postID
-  return(nodesAround)
-  
+
+  nodesAround
+  # return("all of you")
   
 }
 
@@ -546,25 +385,45 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   elbow<-findElbow(analyzeComponents(d,step=.01))
   g <- buildGraph(d,elbow)
   c<-inspectComponents(g)
-  others<- as.data.frame(lapply(list.vertex.attributes(g),function(x) get.vertex.attribute(g,x)),col.names = list.vertex.attributes(g))
-  others<-others[(others$comp %in% c[c$a==1,]$c),]
-  others$level<-0
-  others$maxpth<- 0
-  others$triangles<-0
-  others$csize<-1
+  ## Resulting component is a tibble with
+  ## two columns. 
+  # c - component ID
+  # a - number of nodes in the component 
+  
+  print("component class")
+  print(class(c))
+  print("component info")
+  print(c)
+  
+  ## These get added to the printed dataframe at the end. 
+  ## Its unclear to me what this is for ... level, path and triangels are set to 0
+  
+  
+  # Removed after email discussion with Josh on June 25, 2018
+  # others<- as.data.frame(lapply(list.vertex.attributes(g),function(x) get.vertex.attribute(g,x)),col.names = list.vertex.attributes(g))
+  # others<-others[(others$comp %in% c[c$a==1,]$c),]
+  # others$level<-0
+  # others$maxpth<- 0
+  # others$triangles<-0
+  # others$csize<-1
   
   ## Debugging print statement
   print("binding rows")
   r<-bind_rows(vsummarizeComponents(g,c[c$a>1,]$c))
   # print(r)
   
-  ## Debugging print statement
-  print("binding rows with others")
-  r<-bind_rows(r,others) %>% mutate(corpus=corpus)
+  ## Others removed after discussion with Josh, via 
+  ## email on June 25, 2018
+  # r<-bind_rows(r,others) %>% mutate(corpus=corpus)
+  
+  
   # print(r)
-  
-  
+  print(class(corpus))
+  print(class(data_dir))
+  print(paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
   write.csv(r,file=paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
+  
+#  write.csv(r,file=paste0(data_dir,"components/", corpus,"_nodedesc.csv", sep=""))
   print(paste("Done:",corpus))
   #return(r)
   
@@ -588,20 +447,6 @@ cutmax<-function(v,breaks=100) {
 }
 
 
-plotPathDescription<-function() {
-  x<-read.csv("component_summary.csv")
-  x4 <- x%>% filter(csize>1)%>%group_by(corpus,comp) %>% summarize(ind=mean(indegree[indegree>0]),outd=mean(outdegree[outdegree>0]),maxp=mean(maxpth[outdegree==0]),cs=max(csize))
-  ggplot(x4,aes(x=ind,y=outd,color=maxp))+scale_color_viridis(name="Mean Path\nLength",direction = -1)+scale_x_log10()+scale_y_log10()+geom_jitter(size=.7)+theme_dark()+ylab("Mean Out Degree")+xlab("Mean In Degree")
- 
-}
-
-# plotHeatmap<-function(data,cl,ul) {
-#   ggplot(data,aes(csbin,urbin,))+geom_tile(aes(fill=rescale(clout),alpha=cs3),color="white")+
-#     scale_fill_viridis(name="Coreness",direction=-1)+scale_alpha_identity()+
-#     theme_minimal()+scale_x_continuous(breaks=c(1:10),labels=cl)+
-#     scale_y_continuous(breaks=c(1:10),labels=ul)+theme(panel.grid.minor=element_blank(),panel.grid.major = element_blank())+
-#     xlab("Conversation size")+ylab("User/post ratio")
-# }
 
 
 
