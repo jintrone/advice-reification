@@ -75,7 +75,7 @@ loadPostingData<-function(corpus) {
 
 loadData<- function(corpus,start="2009-01-01",end="2014-01-01",topic="NMF",gap=28) {
   file = str_c(data_dir,corpus,"_dag.",gap,".",topic,".csv",sep="")
-  print(file)
+  # print(file)
   tree<-read.csv(file)
   tree<-tree[tree$f.uniqueId!="NULL" & tree$t.uniqueId!="NULL",]
   tree$f.date<-as.POSIXct(tree$f.date,format="%Y-%m-%d %H:%M:%S")
@@ -292,44 +292,26 @@ inspectComponents<-function(g) {
   tibble(c=V(g)$comp) %>% group_by(c) %>% summarise(a=n()) %>% arrange(-a)
 }
 
+
 ## Main summarization function 
 summarizeComponents<-function(graph,comp=NULL) {
   if (!is.null(comp)) {
     sg<-getSubgraph(graph,comp)
+    print(comp)
     ##debugging notes
-    print("subgraph section executed")
-    print_all(sg)    
-    # png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
-    # plot.igraph(sg)
-    # dev.off()
+    # print("subgraph section executed")
+    # print_all(sg)    
+    png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
+    plot.igraph(sg)
+    dev.off()
   } else {
     print("original graph as subgraph")
     sg<-graph
   }
-  ### All this is doing is printing out all the vertext attributes
-  ### We need one edge attribute, which is the parent of each post
-  ### 
-  df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
-  #  print(str(df))
-  #  df2 <- as.data.frame(lapply(getParent(graph, )))
-  ## We think the name of the vertex will be the nodeID that I pass into this 
-  ## "Get Parent" function
-  ## There's a column in the nodeDesc files which is the postID
-  
-  ## Need to know for each vertex, what the vertex on the other end of the edge is
-  ## This "name" should be the "postid", like 158_9 or some such thing 
-  
-  ## apply a function to the dataframe (every row) to generate a new column 
-  ### Name it "source"
-  
-  ## Debugging and looking at edge information
+
+    df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
+ 
   vSearch <- as.data.frame(lapply(list.edge.attributes(sg),function(x) get.edge.attribute(sg,x)),col.names = list.edge.attributes(sg))
-  # print(vSearch)
-  
-  #TODO: KEY: Regenerate the components files so I can see what came before each row in the 
-  ## THe component ... 
-  ## Sometimes, will need to go back to the original thread to see the interaction
-  ## Maybe need to do that sometimes but not all the times ... 
   
   df$otherVertex <- getParent(sg,V(sg))
   
@@ -343,7 +325,7 @@ summarizeComponents<-function(graph,comp=NULL) {
 }
 
 
-getParent <- function(graph, nodeID) {
+getParent <- function(g, idx) {
   ## will generate the ego graph for the node
   ## 
   ## igraph
@@ -351,7 +333,15 @@ getParent <- function(graph, nodeID) {
   ## order = nodeID ... order = 1 is node and adjacent nodes
   ## order = 0 is the node itself
   ## we need to get the post ID off of the node that part of this .. 
-  nodesAround <- ego(graph, order=0, nodes = nodeID, mode = "in")
+
+  # nodesAround <- ego(graph, order=0, nodes = nodeID, mode = "in")
+  d<-adjacent_vertices(g,v=V(g)[idx],mode="in")
+  # d<-d[which(!is.infinite(d))]
+    
+  nodesAround <- d    
+  print("D")
+  print(d)
+  # print(nodesAround$names)
 
   ## get the nodelist off the iGraph
   ## subtract out the nodID I passed in
@@ -359,8 +349,9 @@ getParent <- function(graph, nodeID) {
   ## That will leave me with a list of 1 node
   
   ## that NodeID is, we think, the postID
-  return(nodesAround)
-  
+
+  nodesAround
+  # return("all of you")
   
 }
 
@@ -406,25 +397,33 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   
   ## These get added to the printed dataframe at the end. 
   ## Its unclear to me what this is for ... level, path and triangels are set to 0
-  others<- as.data.frame(lapply(list.vertex.attributes(g),function(x) get.vertex.attribute(g,x)),col.names = list.vertex.attributes(g))
-  others<-others[(others$comp %in% c[c$a==1,]$c),]
-  others$level<-0
-  others$maxpth<- 0
-  others$triangles<-0
-  others$csize<-1
+  
+  
+  # Removed after email discussion with Josh on June 25, 2018
+  # others<- as.data.frame(lapply(list.vertex.attributes(g),function(x) get.vertex.attribute(g,x)),col.names = list.vertex.attributes(g))
+  # others<-others[(others$comp %in% c[c$a==1,]$c),]
+  # others$level<-0
+  # others$maxpth<- 0
+  # others$triangles<-0
+  # others$csize<-1
   
   ## Debugging print statement
   print("binding rows")
   r<-bind_rows(vsummarizeComponents(g,c[c$a>1,]$c))
   # print(r)
   
-  ## Debugging print statement
-  print("binding rows with others")
-  r<-bind_rows(r,others) %>% mutate(corpus=corpus)
+  ## Others removed after discussion with Josh, via 
+  ## email on June 25, 2018
+  # r<-bind_rows(r,others) %>% mutate(corpus=corpus)
+  
+  
   # print(r)
+  print(class(corpus))
+  print(class(data_dir))
+  print(paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
+  write.csv(r,file=paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
   
-  
-  write.csv(r,file=paste0(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
+#  write.csv(r,file=paste0(data_dir,"components/", corpus,"_nodedesc.csv", sep=""))
   print(paste("Done:",corpus))
   #return(r)
   
