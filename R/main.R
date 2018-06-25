@@ -7,8 +7,24 @@ require(lubridate)
 library(dplyr)
 library(stringr)
 
+
+if (Sys.info()["nodename"] == "BlackChopper.local")
+{
+  # Goggins Home Computer
+  Sys.setenv("RProj_Data_Dir" = "/Volumes/SeansRAIDBaby/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data/")
+} else {
+  # Goggins Laptop
+  Sys.setenv("RProj_Data_Dir" = "/Users/seanpgoggins/Dropbox/Work/00. Active Projects/305. Visualizing Reflexive Dynamics/Current VRD Projects/2017-Cscw/data/")  
+}
+
+
+
 source("distpointline.r")
 
+data_dir = Sys.getenv("RProj_Data_Dir")
+
+## Note: These 23 corpora are the ones that were in the paper going to Computers and Human Behavior. 
+## Note: The original data directory had additional corpora node files generated.
 corpora = c("add_and_adhd_exchange","alzheimers_exchange","asthma_exchange","back_pain_exchange","breast_cancer_exchange","cholesterol_management_exchange","diabetes_exchange","diet_exchange","digestive_disorders_exchange","epilepsy_exchange","fibromyalgia_exchange","fitness_and_exercise_exchange","hepatitis_exchange","hiv_and_aids_exchange","menopause_exchange","multiple_sclerosis_exchange","osteoporosis_exchange","pain_management_exchange","parenting_exchange","parkinsons_disease_exchange","relationships_and_coping_community","sex_and_relationships_exchange","sexual_conditions_and_stds_exchange")
 test_corpora = c("add_and_adhd_exchange","alzheimers_exchange","asthma_exchange")
 todo<-c("diabetes_exchange","diet_exchange","digestive_disorders_exchange","epilepsy_exchange","fibromyalgia_exchange","fitness_and_exercise_exchange","hepatitis_exchange","hiv_and_aids_exchange","menopause_exchange","multiple_sclerosis_exchange","osteoporosis_exchange","pain_management_exchange","parenting_exchange","parkinsons_disease_exchange","relationships_and_coping_community","sex_and_relationships_exchange","sexual_conditions_and_stds_exchange")
@@ -24,11 +40,6 @@ dbname = "webmd"
 dbuser = "webmd"
 dbpassword = "pickle"
 host = "augurlabs.io"
-
-
-#data_dir = "../../data/"
-# Goggins data directory is one level above .. not sure why the difference. 
-data_dir = "../data/"
 
 
 ###############
@@ -166,6 +177,8 @@ inspectComponents<-function(g) {
 
 # Generate the cutoff values based on interpost times
 # Corresponds to parameter K
+
+## This is only used to generate cutoffs for the groovy project
 generateCutoffs<-function() {
   d<-loadInterpostData()
   d%>%group_by(corpus)%>%filter(delta>0)%>%summarise(M=mean(log(delta)),K=exp(mean(log(delta))+(2*sd(log(delta)))))
@@ -184,7 +197,7 @@ scaleTo<-function(x,y,min=-1,max=1) {
 }
 
 
-ƒ
+
 cf<-function(x) {
   c("red","orange","blue")[match(x,c("C","P","XP"))]
 }
@@ -430,14 +443,20 @@ applyToComponents<-function(graph,minsize=-1,maxsize=Inf) {
 summarizeComponents<-function(graph,comp=NULL) {
   if (!is.null(comp)) {
     sg<-getSubgraph(graph,comp)
+    ##debugging notes
+    print("subgraph section executed")
+    # png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
+    # plot.igraph(sg)
+    # dev.off()
   } else {
+    print("original graph as subgraph")
     sg<-graph
   }
 ### All this is doing is printing out all the vertext attributes
   ### We need one edge attribute, which is the parent of each post
   ### 
   df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
-  
+  print(str(df))
   #  df2 <- as.data.frame(lapply(getParent(graph, )))
   ## We think the name of the vertex will be the nodeID that I pass into this 
   ## "Get Parent" function
@@ -449,11 +468,16 @@ summarizeComponents<-function(graph,comp=NULL) {
   ## apply a function to the dataframe (every row) to generate a new column 
   ### Name it "source"
   
+  ## Debugging and looking at edge information
+  vSearch <- as.data.frame(lapply(list.edge.attributes(sg),function(x) get.edge.attribute(sg,x)),col.names = list.edge.attributes(sg))
+  # print(vSearch)
+  
   #TODO: KEY: Regenerate the components files so I can see what came before each row in the 
   ## THe component ... 
   ## Sometimes, will need to go back to the original thread to see the interaction
   ## Maybe need to do that sometimes but not all the times ... 
   
+  df$otherVertex <- getParent(sg,V(sg))
   
   df$maxpth<-maxPath(sg,V(sg))
   df$indegree<-degree(sg,V(sg),mode="in")
@@ -475,15 +499,19 @@ getParent <- function(graph, nodeID) {
   ## order = nodeID ... order = 1 is node and adjacent nodes
   ## order = 0 is the node itself
   ## we need to get the post ID off of the node that part of this .. 
-  nodesAround <- ego(graph, order=1, nodes = nodeID, mode = "in")
-  
+  nodesAround <- ego(graph, order=0, nodes = nodeID, mode = "in")
+ # print(class(nodesAround))
+ # print(nodesAround)
+  png("test03b.png")
+  plot.igraph(graph)
+  dev.off()
   ## get the nodelist off the iGraph
   ## subtract out the nodID I passed in
   
   ## That will leave me with a list of 1 node
   
   ## that NodeID is, we think, the postID
-  
+  return(nodesAround)
   
   
 }
@@ -509,7 +537,7 @@ pipeline<-function(corpus,topic="NMF",gap = 28) {
 pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   if (!is.null(gaps)) {
     g<-gaps[gaps$corpus==corpus,]$gap
-    print(g)
+    # print(g)
     d<-loadData(corpus,topic=topic,gap=g)  
   } else {
     d<-loadData(corpus,topic=topic)
@@ -524,11 +552,19 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   others$maxpth<- 0
   others$triangles<-0
   others$csize<-1
+  
+  ## Debugging print statement
+  print("binding rows")
   r<-bind_rows(vsummarizeComponents(g,c[c$a>1,]$c))
+  # print(r)
   
+  ## Debugging print statement
+  print("binding rows with others")
   r<-bind_rows(r,others) %>% mutate(corpus=corpus)
+  # print(r)
   
-  write.csv(r,file=paste(corpus-spg,"_nodedesc.csv",sep=""))
+  
+  write.csv(r,file=paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
   print(paste("Done:",corpus))
   #return(r)
   
@@ -536,7 +572,8 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
 }
 
 doAll<-function(corpora,gaps) {
-  rbind_all(lapply(corpora,function (x) pipeline(x,gap=gaps[gaps$corpus==x,]$gap )))
+#  rbind_all(lapply(corpora,function (x) pipeline(x,gap=gaps[gaps$corpus==x,]$gap )))
+  bind_rows(lapply(corpora,function (x) pipeline(x,gap=gaps[gaps$corpus==x,]$gap )))
 }
 
 genSample<-function(corpora,gap=NULL) {
@@ -558,13 +595,13 @@ plotPathDescription<-function() {
  
 }
 
-plotHeatmap<-function(data,cl,ul) {
-  ggplot(data,aes(csbin,urbin,))+geom_tile(aes(fill=rescale(clout),alpha=cs3),color="white")+
-    scale_fill_viridis(name="Coreness",direction=-1)+scale_alpha_identity()+
-    theme_minimal()+scale_x_continuous(breaks=c(1:10),labels=cl)+
-    scale_y_continuous(breaks=c(1:10),labels=ul)+theme(panel.grid.minor=element_blank(),panel.grid.major = element_blank())+
-    xlab("Conversation size")+ylab("User/post ratio")
-}
+# plotHeatmap<-function(data,cl,ul) {
+#   ggplot(data,aes(csbin,urbin,))+geom_tile(aes(fill=rescale(clout),alpha=cs3),color="white")+
+#     scale_fill_viridis(name="Coreness",direction=-1)+scale_alpha_identity()+
+#     theme_minimal()+scale_x_continuous(breaks=c(1:10),labels=cl)+
+#     scale_y_continuous(breaks=c(1:10),labels=ul)+theme(panel.grid.minor=element_blank(),panel.grid.major = element_blank())+
+#     xlab("Conversation size")+ylab("User/post ratio")
+# }
 
 
 
