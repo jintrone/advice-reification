@@ -59,7 +59,8 @@ plotSubgraphAsSugiyama<-function(graph,comp) {
   #sg<-simplify(sg)
   #delete_edges(sg,which(head_of(sg,E(sg))$level==tail_of(sg,E(sg))$level))
   l<-layout_with_sugiyama(sg,layer=V(sg)$level,vgap=10,hgap=1)
-  origvert <- c(rep(TRUE, vcount(sg)), rep(FALSE, nrow(l$layout.dummy)))
+  origvert <- c(rep(TRUE, vcount(sg)))
+  
   realedge <- as_edgelist(l$extd_graph)[,2] <= vcount(sg)
   
   #print(scaleTo(l$extd_graph$layout[,2],))
@@ -67,6 +68,8 @@ plotSubgraphAsSugiyama<-function(graph,comp) {
   l$extd_graph$layout[,2]=scaleTo(l$extd_graph$layout[,2],l$extd_graph$layout[,2],min=-4,max=4)
   #print(l$extd_graph$layout)
   
+  graphTxt <- as.character(graph)
+  png(paste(graphTxt, "-", comp, "_sugiyama.png"))
   plot(l$extd_graph,vertex.label.cex=.75,
        vertex.label.family="sans",
        vertex.label.dist=.5,
@@ -80,6 +83,7 @@ plotSubgraphAsSugiyama<-function(graph,comp) {
        vertex.shape=ifelse(origvert, "circle", "none"),
        vertex.label=ifelse(origvert, V(sg)$name,""),
        edge.arrow.mode=0,margin=c(0,0,10,10))
+  dev.off()
 }
 
 
@@ -109,13 +113,19 @@ plotSimpleSubgraph<-function(graph,indices) {
   
 }
 
-plotSubgraphAsTree<-function(graph,indices) {
+plotSubgraphAsTree<-function(graph,indices,aCorpus) {
   sg<-induced_subgraph(graph,indices)
   levels <- floor((V(sg)$time - min(V(sg)$time))/(60*60*24))
   r<-which(V(sg)$time == min(V(sg)$time))
   
   l<-layout_as_tree(sg,circular = TRUE, root=r) 
   
+  node <- as.character(V(sg)$name)
+  comp <- V(sg)$comp
+  vID <- V(sg)$componentVertexID
+  corpus <- aCorpus
+  nameGraph <- paste(corpus, "-", comp, "-", vID, "-", graph)
+  png(paste0(data_dir,"components/", "graphs/", nameGraph,"-", node, "_subtree.png"))
   plot(sg,
        edge.arrow.size=.25,
        rescale=TRUE,
@@ -124,9 +134,10 @@ plotSubgraphAsTree<-function(graph,indices) {
        vertex.color = cf(V(sg)$user),
        vertex.size=5,
        vertex.shape="circle",
-       vertex.label="",
+       vertex.label= paste((V(sg)$poster),"-", (V(sg)$name)),
        edge.arrow.mode=2, layout=layout_with_kk)
-}
+  dev.off()
+  }
 
 
 plotPathDescription<-function() {
