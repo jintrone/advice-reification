@@ -1,4 +1,29 @@
-# iqcrossforum
-Information Quality and Cross Forum Posting
+# iqcrossforum repository
+**Paper Goals Related to: Information Quality and Cross Forum Posting**
 
-Note: **This repository uses git-lfs, github's large file system technology, to store data.  To accurately clone it, you will need git-lfs installed locally first**  https://git-lfs.github.com/ 
+# WebMD, 2018
+
+## Notes on Data Preparation
+All of the analysis is based on data assembled and processed to some extent using the included groovy and python programs.  Their documentation is not complete, the the code is well commented.
+
+## Notes on Analysis
+1. All the functions that are essential for qualitative analysis are in main.R or called from [main.R](./main.R)
+2. [qual-graphs.R](./qual-graphs.R) calls functions in main.R and iterates through all of the forums -- 23 total -- that are in the paper, producing data that includes adjacency information for each note in each component.
+3. The task of identifying qualitative examples to support our algorithm will focus on components of sizes larger than 4.
+4. The output of the [qual-graphs.R](./qual-graphs.R) data is loaded into a mysql database by:
+  - First, munging all the output files from each of the 23 forums together, using [make-qual-data.R](./make-qual-data.R)
+  - Second, using data loading facilities in navicat to load the data into a table
+5. We then query the mysql database to extract two key pieces of information using [qual-lateral-posts.R](./qual-lateral-posts.R) :
+  - Forum post text in original form, but only for components with 4 or more members.  Most of the components have only 2 posts, and we view these as probabilistically less likely to produce a useful result than the longer chains.  This is nominally supported by our LIWC analysis, which shows that longer topic threads produce more information.
+  - The list of adjancies for each component that can then be coded as connected
+6. The results from step 5 are loaded into the database using navicat tools.  Since the posts contain free form text, the file we produced is pipe delimited ("|") instead of comma delimted.
+  - the analysis_tables folder has all components dumped in a sql backup format in components.sql
+  - the data with posts is in the analysis_tables folder in a sql backup formatted file called component_posts.sql
+7. We can then extract the largest components of conversation using this query.
+```sql
+select * from component_posts where csize >= 6
+order by corpus, comp, post_timestamp
+```
+
+
+Note: **This repository uses git-lfs, github's large file system technology, to store data.  To accurately clone it, you will need git-lfs installed locally first**  https://git-lfs.github.com/
