@@ -301,20 +301,26 @@ summarizeComponents<-function(graph,comp=NULL) {
     ##debugging notes
     # print("subgraph section executed")
     # print_all(sg)    
-    png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
-    plot.igraph(sg)
-    dev.off()
+    # png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
+    # plot.igraph(sg)
+    # dev.off()
   } else {
     print("original graph as subgraph")
     sg<-graph
   }
 
-    df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
+  df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
  
   vSearch <- as.data.frame(lapply(list.edge.attributes(sg),function(x) get.edge.attribute(sg,x)),col.names = list.edge.attributes(sg))
   
   df$otherVertex <- getParent(sg,V(sg))
+  class(df$time) = c('POSIXt','POSIXct')
   
+  # 
+  # png(paste0(data_dir, "components/", as.character(sg),"-", comp,"test03.png"))
+  # plot.igraph(sg)
+  # dev.off()
+  # # 
   df$maxpth<-maxPath(sg,V(sg))
   df$indegree<-degree(sg,V(sg),mode="in")
   df$outdegree<-degree(sg,V(sg),mode="out")
@@ -416,11 +422,11 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   ## email on June 25, 2018
   # r<-bind_rows(r,others) %>% mutate(corpus=corpus)
   
-  
-  # print(r)
   print(class(corpus))
   print(class(data_dir))
   print(paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
+  print(typeof(r$otherVertex))
+  r$otherVertex <- as.character(r$otherVertex)
   write.csv(r,file=paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
   
 #  write.csv(r,file=paste0(data_dir,"components/", corpus,"_nodedesc.csv", sep=""))
