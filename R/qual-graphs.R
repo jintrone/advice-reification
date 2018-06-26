@@ -1,6 +1,6 @@
 # Building the component stuff
 
-rm(list=ls())
+rm(list = ls())
 #UNIVERSAL FUNCTIONS
 require(reshape2)
 require(ggplot2)
@@ -24,18 +24,9 @@ for (i in 1:nrow(gapper))
 {
   cutoff <- round(gapper[i,]$K)
   thisCorpus <- as.character(gapper[i,]$corpus)
- # print(corpus)
- # print(cutoff)
- # print("test")
-  print(str(thisCorpus))
-  print(class(thisCorpus))
+  
   if (thisCorpus %in% corpora)
   {
-   # print(paste(i," Yes ! "))
-   # doAll(corpus,gapper)
-    # print("breaker")
-    # print(thisCorpus)
-    # print("breaker")
     pipelineToFile(thisCorpus, topic = "NMF", gapper)
   }
 }                   
