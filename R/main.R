@@ -88,7 +88,7 @@ loadData<- function(corpus,start="2009-01-01",end="2014-01-01",topic="NMF",gap=2
 # which is effectively a connected graph in the graph of all posts for a given corpus
 # See the 'pipelineToFile' function below
 loadSummaryData<-function() {
-  path<-stc_c(data_dir,"components/")
+  path <- stc_c(data_dir,"components/")
   bind_rows(lapply(list.files(path=path,pattern="*_nodedesc.csv"),function(x) read.csv(paste(path,x,sep=""))))
 }
 
@@ -108,7 +108,7 @@ buildBasicGraph<-function(data) {
   nodes<-nodes %>% unique(.)
   edges<-data[as.character(data$f.poster)!=as.character(data$t.poster),which(names(data) %in% c("f.uniqueId","t.uniqueId","t.date","similarity"))]
   names(edges)<-c("from","to","time","similarity")
-  g<-graph_from_data_frame(edges, directed = TRUE, vertices = nodes)
+  g <- graph_from_data_frame(edges, directed = TRUE, vertices = nodes)
 }
 
 # Helper function to load a graph, and then prune links that do not
@@ -163,20 +163,20 @@ f<-function(x) {
 
 sensitivityAnalysis<-function(tree) {
   vf<-Vectorize(f)
-  tibble(cutoff=0:20/40)%>%mutate(c=vf(cutoff))
+  tibble(cutoff = 0:20/40)%>%mutate(c = vf(cutoff))
 }
 
 ### Seeking an empirical or literature based
 ### foundation for this elbow function in 
 ### response to reviewer feedback.
 
-findElbow<-function(data) {
-  data<-data %>% mutate(n=(comps-min(comps))/(max(comps)-min(comps))) %>% mutate(d=distancePointLine(cutoff,n,1,0))
+findElbow <- function(data) {
+  data <- data %>% mutate(n = (comps-min(comps))/(max(comps)-min(comps))) %>% mutate(d = distancePointLine(cutoff,n,1,0))
   #return(data)
-  data[which(data$d==max(data$d)),]$cutoff
+  data[which(data$d == max(data$d)),]$cutoff
 }
 
-describeData<-function(data=NULL,cutoff=NULL,graph=NULL) {
+describeData <- function(data=NULL,cutoff = NULL,graph = NULL) {
   if (is.null(graph)) {
     g<-buildGraph(data,cutoff)
   } else {
@@ -195,75 +195,75 @@ describeData<-function(data=NULL,cutoff=NULL,graph=NULL) {
 }
 
 
-iwrap<-function(g,c,f) {
-  sg<-getSubgraph(g,c)
+iwrap <- function(g,c,f) {
+  sg <- getSubgraph(g,c)
   f(sg)
 }
 
-wrap<-Vectorize(iwrap,"c")
+wrap <- Vectorize(iwrap,"c")
 
-numUsers<-function(graph) {
+numUsers <- function(graph) {
   length(unique(V(graph)$poster))
   
 }
 
-numDays<-function(graph) {
+numDays <- function(graph) {
   max(V(graph)$level)-min(V(graph)$level)
 }
 
-percentStarts<-function(g) {
+percentStarts <- function(g) {
   d <- degree(g,mode="in")
   length(d[which(d==0)])/length(d)
 }
 
-percentEnds<-function(g) {
+percentEnds <- function(g) {
   d <- degree(g,mode="out")
   length(d[which(d==0)])/length(d)
 }
 
-meanNonTerminalInDegree<-function(g) {
+meanNonTerminalInDegree <- function(g) {
   d <- degree(g,mode="in")
   mean(d[which(d>0)])
 }
 
-meanNonTerminalOutDegree<-function(g) {
+meanNonTerminalOutDegree <- function(g) {
   d <- degree(g,mode="out")
   mean(d[which(d>0)])
 }
 
-numTriangesInGraph<-function(g) {
+numTriangesInGraph <- function(g) {
   sum(count_triangles(g))
 }
 
-meanTriangesInGraph<-function(g) {
+meanTriangesInGraph <- function(g) {
   mean(count_triangles(g))
 }
 
-propNodesInTriangles<-function(g) {
+propNodesInTriangles <- function(g) {
   v<-count_triangles(g)
   length(v[which(v>0)])/length(v)
 }
 
-maxPath<-function(g,idx) {
+maxPath <- function(g,idx) {
   d<-distances(g,v=V(g)[idx],mode="in")
   d<-d[which(!is.infinite(d))]
   max(d)
 }
 
-inDegree<-function(g,idx) {
+inDegree <- function(g,idx) {
   d<-distances(g,v=V(g)[idx],mode="in")
   d<-d[which(!is.infinite(d))]
   max(d)
 }
 
-maxPath<-Vectorize(maxPath,vectorize.args = "idx")
+maxPath <- Vectorize(maxPath,vectorize.args = "idx")
 
-applyToComponents<-function(graph,minsize=-1,maxsize=Inf) {
-    c<-inspectComponents(graph)
-    numcomps<-nrow(c)
+applyToComponents <- function(graph,minsize=-1,maxsize=Inf) {
+    c <- inspectComponents(graph)
+    numcomps <- nrow(c)
     #%>% mutate_at(c(1),funs(f))
     
-    a<-c[which(c$a>1),] %>% mutate_at(c(1),funs(u=wrap(f=numUsers,c=.,g=graph),
+    a <- c[which(c$a>1),] %>% mutate_at(c(1),funs(u=wrap(f=numUsers,c=.,g=graph),
                                                                   d=wrap(f=numDays,c=.,g=graph),
                                                                   ps=wrap(f=percentStarts,c=.,g=graph),
                                                                   pe=wrap(f=percentEnds,c=.,g=graph),
@@ -276,8 +276,8 @@ applyToComponents<-function(graph,minsize=-1,maxsize=Inf) {
      a.c<- a%>% group_by(level) %>% summarise(count=n(),pct=n()/numcomps)
      print(a.c)
      a<- a %>% group_by(level) %>% summarize_at(c(2:11),funs(median,IQR))
-     a$count<-a.c$count
-     a$pct<-a.c$pct
+     a$count <- a.c$count
+     a$pct <- a.c$pct
      return(a)
 }
 
@@ -288,32 +288,28 @@ applyToComponents<-function(graph,minsize=-1,maxsize=Inf) {
 # Give a graph with nodes labelled by component id list the components
 # by size (the number of nodes) in decending order
 #  graph - the graph to analyze
-inspectComponents<-function(g) {
+inspectComponents <- function(g) {
   tibble(c=V(g)$comp) %>% group_by(c) %>% summarise(a=n()) %>% arrange(-a)
 }
 
 
 ## Main summarization function 
-summarizeComponents<-function(graph,comp=NULL) {
+summarizeComponents <- function(graph,comp=NULL) {
   if (!is.null(comp)) {
     sg<-getSubgraph(graph,comp)
     print(comp)
-    ##debugging notes
-    # print("subgraph section executed")
-    # print_all(sg)    
-    # png(paste0(data_dir, "components/", as.character((runif(1))), "test03.png"))
-    # plot.igraph(sg)
-    # dev.off()
   } else {
     print("original graph as subgraph")
     sg<-graph
   }
 
-  df<-as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
+  df <- as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
  
   vSearch <- as.data.frame(lapply(list.edge.attributes(sg),function(x) get.edge.attribute(sg,x)),col.names = list.edge.attributes(sg))
   
-  df$otherVertex <- getParent(sg,V(sg))
+  df$neighbors <- getNeighbors(sg,V(sg))
+  df$adjacent <- getAdjacent(sg,V(sg))
+  df$componentVertexID <- V(sg)
   class(df$time) = c('POSIXt','POSIXct')
   
   # 
@@ -321,47 +317,37 @@ summarizeComponents<-function(graph,comp=NULL) {
   # plot.igraph(sg)
   # dev.off()
   # # 
-  df$maxpth<-maxPath(sg,V(sg))
-  df$indegree<-degree(sg,V(sg),mode="in")
-  df$outdegree<-degree(sg,V(sg),mode="out")
+  df$maxpth <- maxPath(sg,V(sg))
+  df$indegree <- degree(sg,V(sg),mode="in")
+  df$outdegree <- degree(sg,V(sg),mode="out")
   
-  df$triangles<-count_triangles(sg)
-  df$csize<-nrow(df)
+  df$triangles <- count_triangles(sg)
+  df$csize <- nrow(df)
   return(df)
 }
 
 
-getParent <- function(g, idx) {
-  ## will generate the ego graph for the node
-  ## 
-  ## igraph
-  ### this should give us an egograph 
-  ## order = nodeID ... order = 1 is node and adjacent nodes
-  ## order = 0 is the node itself
-  ## we need to get the post ID off of the node that part of this .. 
-
-  # nodesAround <- ego(graph, order=0, nodes = nodeID, mode = "in")
-  d<-adjacent_vertices(g,v=V(g)[idx],mode="in")
+getNeighbors <- function(g, idx) {
+  # d <- adjacent_vertices(g,v = V(g)[idx],mode = "in")
+  d <- neighborhood(g, mode = "in")
   # d<-d[which(!is.infinite(d))]
-    
   nodesAround <- d    
   print("D")
   print(d)
-  # print(nodesAround$names)
-
-  ## get the nodelist off the iGraph
-  ## subtract out the nodID I passed in
-  
-  ## That will leave me with a list of 1 node
-  
-  ## that NodeID is, we think, the postID
-
   nodesAround
-  # return("all of you")
-  
 }
 
-vsummarizeComponents<-Vectorize(summarizeComponents,vectorize.args = "comp",SIMPLIFY=FALSE)
+getAdjacent <- function(g, idx) {
+  d <- adjacent_vertices(g,v = V(g)[idx],mode = "in")
+  # d <- neighborhood(g, mode = "in")
+  # d<-d[which(!is.infinite(d))]
+  nodesAround <- d    
+  print("D")
+  print(d)
+  nodesAround
+}
+
+vsummarizeComponents <- Vectorize(summarizeComponents,vectorize.args = "comp",SIMPLIFY=FALSE)
 
 
 pipeline<-function(corpus,topic="NMF",gap = 28) {
@@ -426,8 +412,16 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   print(class(data_dir))
   print(paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
   print(typeof(r$otherVertex))
-  r$otherVertex <- as.character(r$otherVertex)
-  write.csv(r,file=paste(data_dir,"components/", corpus,"_nodedesc.csv",sep=""))
+  r$neighbors <- as.character(r$neighbors)
+  r$adjacent <- as.character(r$adjacent)
+  
+  ## changed from data_dir temporarily to facilitate building on 2 computers.
+  output_dir <- getwd()
+  print(data_dir)
+  write.csv(r,file=paste(data_dir,"components/", corpus,"_new_nodedesc.csv",sep=""))
+
+  # print(output_dir)
+  # write.csv(r,file=paste(output_dir,"/components/", corpus,"_nodedesc.csv",sep=""))
   
 #  write.csv(r,file=paste0(data_dir,"components/", corpus,"_nodedesc.csv", sep=""))
   print(paste("Done:",corpus))
