@@ -6,6 +6,8 @@ require(ggplot2)
 require(lubridate)
 library(dplyr)
 library(stringr)
+require(viridis)
+
 
 
 if (Sys.info()["nodename"] == "BlackChopper.local")
@@ -294,7 +296,7 @@ inspectComponents <- function(g) {
 
 
 ## Main summarization function 
-summarizeComponents <- function(graph,comp=NULL) {
+summarizeComponents <- function(graph,comp=NULL,aCorpus) {
   if (!is.null(comp)) {
     sg<-getSubgraph(graph,comp)
     print(comp)
@@ -302,10 +304,14 @@ summarizeComponents <- function(graph,comp=NULL) {
     print("original graph as subgraph")
     sg<-graph
   }
+  
+  plotSubgraphAsTree(sg, V(sg), aCorpus)
+  # plotSubgraphAsSugiyama(graph,comp)
 
   df <- as.data.frame(lapply(list.vertex.attributes(sg),function(x) get.vertex.attribute(sg,x)),col.names = list.vertex.attributes(sg))
- 
-  vSearch <- as.data.frame(lapply(list.edge.attributes(sg),function(x) get.edge.attribute(sg,x)),col.names = list.edge.attributes(sg))
+  
+  # edge attributes if ever needed. 
+  # vSearch <- as.data.frame(lapply(list.edge.attributes(sg),function(x) get.edge.attribute(sg,x)),col.names = list.edge.attributes(sg))
   
   df$neighbors <- getNeighbors(sg,V(sg))
   df$adjacent <- getAdjacent(sg,V(sg))
@@ -382,10 +388,10 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   # c - component ID
   # a - number of nodes in the component 
   
-  print("component class")
-  print(class(c))
-  print("component info")
-  print(c)
+  # print("component class")
+  # print(class(c))
+  # print("component info")
+  # print(c)
   
   ## These get added to the printed dataframe at the end. 
   ## Its unclear to me what this is for ... level, path and triangels are set to 0
@@ -401,7 +407,7 @@ pipelineToFile<-function(corpus,topic="NMF",gaps=NULL) {
   
   ## Debugging print statement
   print("binding rows")
-  r<-bind_rows(vsummarizeComponents(g,c[c$a>1,]$c))
+  r<-bind_rows(vsummarizeComponents(g,c[c$a>1,]$c,corpus))
   # print(r)
   
   ## Others removed after discussion with Josh, via 
