@@ -4,7 +4,7 @@
 # WebMD, 2018
 
 ## Key Information:
-1. These are the [definitions of cross threaded conversations](./CrossThreadedConversationDefined.md) emloyed in our paper.
+1. These are the [definitions of cross threaded conversations](./CrossThreadedConversationDefined.md) employed in our paper.
 2. These are [analysis notes](./ANALYSIS_NOTES_README.md) for finding specific examples. 
 
 ## Notes on Data Preparation
