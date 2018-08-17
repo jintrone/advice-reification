@@ -3,6 +3,10 @@
 
 # WebMD, 2018
 
+## Key Information:
+1. These are the [definitions of cross threaded conversations](./CrossThreadedConversationDefined.md) emloyed in our paper.
+2. These are [analysis notes](./ANALYSIS_NOTES_README.md) for finding specific examples. 
+
 ## Notes on Data Preparation
 All of the analysis is based on data assembled and processed to some extent using the included groovy and python programs.  Their documentation is not complete, the the code is well commented.
 
